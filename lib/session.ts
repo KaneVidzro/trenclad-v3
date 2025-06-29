@@ -1,86 +1,68 @@
-import "server-only";
-import { SignJWT, jwtVerify } from "jose";
+"use server";
+
+import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { sessionOptions } from "@/lib/utils";
 
-// Secret used for signing the JWT
-const secretKey = process.env.SESSION_SECRET;
-const encodedKey = new TextEncoder().encode(secretKey);
-
-// --- Create Session ---
-/**
- * Creates a session by signing a JWT and setting it in a secure HTTP-only cookie.
- * @param userId - The ID of the authenticated user
- */
-export async function createSession(userId: string) {
-  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days from now
-  const session = await encrypt({ userId, expiresAt });
-
-  (await cookies()).set("session", session, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    expires: new Date(expiresAt),
-    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-  });
-}
-
-// --- Delete Session ---
-/**
- * Deletes the session cookie.
- */
-export async function deleteSession() {
-  (await cookies()).delete("session");
-}
-
-// --- Types ---
-type SessionPayload = {
-  userId: string;
-  expiresAt: number;
-};
-
-// --- Encrypt (Sign JWT) ---
-/**
- * Encrypts session data into a signed JWT.
- * @param payload - The session payload to encrypt
- * @returns A signed JWT string
- */
-export async function encrypt(payload: SessionPayload) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(encodedKey);
-}
-
-// --- Decrypt (Verify JWT) ---
-/**
- * Verifies and decodes a session JWT.
- * @param token - The JWT string
- * @returns The decoded session payload, or null if invalid/expired
- */
-async function decrypt(token: string): Promise<SessionPayload | null> {
-  const { payload } = await jwtVerify<SessionPayload>(token, encodedKey, {
-    algorithms: ["HS256"],
-  });
-
-  if (Date.now() > payload.expiresAt) return null;
-
-  return {
-    userId: payload.userId,
-    expiresAt: payload.expiresAt,
+// Define session data type
+export interface SessionData {
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
   };
 }
 
-// --- Get Session ---
-/**
- * Retrieves and verifies the current session from the cookie.
- * @returns The session payload or null if not authenticated
- */
-export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = cookies();
-  const token = (await cookieStore).get("session")?.value;
+// 1. Get session
+export async function getSession() {
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions,
+  );
+  return session;
+}
 
-  if (!token) return null;
-  return await decrypt(token);
+// 2. Create session
+export async function createSession(user: { id: string; email: string }) {
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions,
+  );
+  session.user = {
+    id: user.id,
+    email: user.email,
+  };
+  await session.save();
+  revalidatePath("/");
+  redirect("/account");
+}
+
+// 3. Destroy session (logout)
+export async function destroySession() {
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions,
+  );
+  session.destroy();
+  revalidatePath("/");
+  redirect("/login");
+}
+
+// 4. Create or update user in the database
+export async function createOAuthAccount(
+  user: { id: string; email: string },
+  provider: string,
+  providerAccountId: string,
+) {
+  await prisma.account.create({
+    data: {
+      userId: user.id,
+      provider,
+      providerAccountId,
+      type: "oauth",
+    },
+  });
 }

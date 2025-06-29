@@ -1,55 +1,55 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSession } from "@/lib/session";
 import bcrypt from "bcryptjs";
+import { createSession } from "@/lib/session";
+import { sendMail } from "@/lib/mailer";
+import { VerificationEmail } from "@/components/email/VerificationEmail";
 
-/**
- * Handle POST requests for user sign-in.
- *
- * Expects a JSON body with `email` and `password`.
- * Validates user credentials, and if valid, creates a session.
- */
-export async function POST(req: Request) {
-  // Parse JSON body from the incoming request
+export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
-
-  // Check for missing fields
   if (!email || !password) {
-    return NextResponse.json(
-      { error: "Email and password are required." },
-      { status: 400 },
-    );
+    return NextResponse.json({ message: "Missing fields" }, { status: 400 });
   }
-
-  // Normalize email to lowercase for consistent database lookups
-  const normalizedEmail = email.toLowerCase();
-
-  // Attempt to find the user by email
+  const normalizedEmail = email.trim().toLowerCase();
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
   });
-
-  // Return an error if user does not exist or password is not set
   if (!user || !user.password) {
     return NextResponse.json(
-      { error: "Invalid email or password." },
+      { message: "Invalid credentials" },
       { status: 401 },
     );
   }
-
-  // Compare provided password with the stored hashed password
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-
-  if (!isPasswordValid) {
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
     return NextResponse.json(
-      { error: "Invalid email or password." },
+      { message: "Invalid credentials" },
       { status: 401 },
     );
   }
+  if (!user.emailVerified) {
+    const token = Math.random().toString(36).substring(2) + Date.now();
+    await prisma.verificationToken.upsert({
+      where: { identifier_token: { identifier: normalizedEmail, token } },
+      update: { expires: new Date(Date.now() + 1000 * 60 * 60) }, // 1h expiry
+      create: {
+        identifier: normalizedEmail,
+        token,
+        expires: new Date(Date.now() + 1000 * 60 * 60), // 1h expiry
+      },
+    });
 
-  // Credentials are valid; create a new session for the user
-  await createSession(user.id);
-
-  // Respond with success
-  return NextResponse.json({ message: "Sign in successful." }, { status: 200 });
+    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email?token=${token}`;
+    await sendMail({
+      to: normalizedEmail,
+      subject: "Verify your email address",
+      react: VerificationEmail({ verificationUrl }),
+    });
+    return NextResponse.json(
+      { message: "Unverified email. Check inbox." },
+      { status: 403 },
+    );
+  }
+  await createSession({ id: user.id, email: user.email });
+  return NextResponse.json({ message: "Login successful" });
 }
