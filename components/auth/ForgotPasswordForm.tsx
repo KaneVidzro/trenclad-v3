@@ -141,7 +141,7 @@ export function ForgotPasswordForm() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isSubmitting ? (
                 <span className="flex items-center">
@@ -158,10 +158,10 @@ export function ForgotPasswordForm() {
 
       <div className="text-center text-sm">
         <Link
-          href="/login"
+          href="/auth/signin"
           className="text-blue-600 hover:underline font-medium"
         >
-          Back to login
+          Back to Signin
         </Link>
       </div>
     </div>

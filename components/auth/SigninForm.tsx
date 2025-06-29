@@ -81,7 +81,7 @@ export function SigninForm() {
         <p className="text-sm text-muted-foreground">
           New to TrenClad?{" "}
           <Link
-            href="/signup"
+            href="/auth/signup"
             className="text-blue-600 hover:underline font-medium"
           >
             Sign up
@@ -113,7 +113,7 @@ export function SigninForm() {
                 <div className="flex items-center justify-between">
                   <FormLabel>Password</FormLabel>
                   <a
-                    href="/forgot-password"
+                    href="/auth/forgot-password"
                     className="text-sm text-blue-600 underline-offset-2 hover:underline"
                   >
                     Forgot your password?
@@ -148,15 +148,15 @@ export function SigninForm() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? (
               <span className="flex items-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Logging in...
+                Signing in...
               </span>
             ) : (
-              "Login"
+              "Sign In"
             )}
           </Button>
         </form>
@@ -165,7 +165,7 @@ export function SigninForm() {
       {/* Social Login Buttons */}
 
       <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-        <span className="bg-card text-muted-foreground relative z-10 px-2">
+        <span className=" text-muted-foreground relative z-10 px-2">
           Or continue with
         </span>
       </div>

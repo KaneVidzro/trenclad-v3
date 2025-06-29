@@ -91,7 +91,7 @@ export function SignupForm() {
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href="/auth/signin"
             className="text-blue-600 hover:underline font-medium"
           >
             Sign in
@@ -163,15 +163,15 @@ export function SignupForm() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? (
               <span className="flex items-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
+                Signing up...
               </span>
             ) : (
-              "Create account"
+              "Sign Up"
             )}
           </Button>
         </form>
@@ -180,7 +180,7 @@ export function SignupForm() {
       {/* Social Login Buttons */}
 
       <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-        <span className="bg-card text-muted-foreground relative z-10 px-2">
+        <span className="text-muted-foreground relative z-10 px-2">
           Or continue with
         </span>
       </div>

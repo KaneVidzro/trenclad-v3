@@ -103,8 +103,8 @@ export function ResetPasswordForm() {
             Password reset successfully! Redirecting to login in {countdown}...
           </p>
           <Button
-            onClick={() => router.push("/login")}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            onClick={() => router.push("/auth/signin")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Go to Login Now
           </Button>
@@ -148,7 +148,7 @@ export function ResetPasswordForm() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isSubmitting ? (
                 <span className="flex items-center">
