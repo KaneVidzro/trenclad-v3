@@ -1,21 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
+
   if (!token) {
-    return NextResponse.json({ message: "Missing token" }, { status: 400 });
+    return redirect("/auth/error?error=Missing token");
   }
+
   const verification = await prisma.verificationToken.findFirst({
     where: { token },
   });
-  if (!verification) {
-    return NextResponse.json(
-      { message: "Invalid or expired token" },
-      { status: 400 },
-    );
+
+  if (!verification || verification.expires < new Date()) {
+    return redirect("/auth/error?error=Invalid or expired token");
   }
-  const identifier = verification.identifier;
+
+  const { identifier } = verification;
+
   await prisma.$transaction([
     prisma.user.update({
       where: { email: identifier },
@@ -26,5 +29,5 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  return NextResponse.json({ message: "Email verified successfully" });
+  return redirect("/auth/signin?emailVerified=true");
 }

@@ -1,23 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-const resetPasswordSchema = z
+const formSchema = z
   .object({
     password: z
       .string()
@@ -31,56 +23,52 @@ const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [countdown, setCountdown] = useState(5);
   const router = useRouter();
 
-  // Handle auto-redirect
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (success && countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (success && countdown === 0) {
-      router.push("/login");
-    }
-    return () => clearTimeout(timer);
-  }, [success, countdown, router]);
-
-  const form = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const handleSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    setSuccess(false);
+
+    const formData = formSchema.safeParse({
+      password,
+      confirmPassword,
+    });
+
+    if (!formData.success) {
+      const message = Object.values(
+        formData.error.flatten().fieldErrors,
+      ).flat()[0];
+      setError(message);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      const res = await fetch("/api/auth/Reset-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ values }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData.data),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Password reset failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
       }
 
-      setSuccess(true);
+      router.push("/auth/signin"); // Redirect to sign in page on success
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
+        err instanceof Error ? err.message : "An unexpected error occurred",
       );
     } finally {
       setIsSubmitting(false);
@@ -88,80 +76,57 @@ export function ResetPasswordForm() {
   };
 
   return (
-    <div className="w-[360px] mx-auto mt-12 space-y-6">
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       {/* Header */}
       <div className="text-center space-y-1">
-        <h1 className="text-xl font-semibold">Reset your password</h1>
+        <h1 className="text-xl font-semibold">Reset Your Password</h1>
         <p className="text-sm text-muted-foreground">
-          Enter a new password for your account
+          Please enter your new password below.
         </p>
       </div>
 
-      {success ? (
-        <div className="text-center space-y-4">
-          <p className="text-green-600">
-            Password reset successfully! Redirecting to login in {countdown}...
-          </p>
+      <form onSubmit={handleResetPassword}>
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-2">
+            <Label htmlFor="password">New password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+            </div>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
           <Button
-            onClick={() => router.push("/auth/signin")}
+            type="submit"
+            disabled={isSubmitting}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Go to Login Now
+            {isSubmitting ? (
+              <span className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              "Save new password"
+            )}
           </Button>
         </div>
-      ) : (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm New Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetting...
-                </span>
-              ) : (
-                "Reset Password"
-              )}
-            </Button>
-          </form>
-        </Form>
-      )}
+      </form>
     </div>
   );
 }

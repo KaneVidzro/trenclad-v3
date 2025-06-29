@@ -1,18 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -35,48 +27,56 @@ const signupSchema = z
     path: ["confirmPassword"],
   });
 
-export function SignupForm() {
+export function SignupForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof signupSchema>>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const handleSubmit = async (values: z.infer<typeof signupSchema>) => {
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
+    const formData = signupSchema.safeParse({
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+
+    if (!formData.success) {
+      const message = Object.values(
+        formData.error.flatten().fieldErrors,
+      ).flat()[0];
+      setError(message);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Create user in database
-      const response = await fetch("/api/auth/signup", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData.data),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Signup failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
       }
 
-      // Redirect to verify email page on success
-      router.push(
-        `/auth/verify-email?email=${encodeURIComponent(values.email)}`,
-      );
+      router.push("/auth/check-email"); // Redirect to check email page on success
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
+        err instanceof Error ? err.message : "An unexpected error occurred",
       );
     } finally {
       setIsSubmitting(false);
@@ -84,7 +84,7 @@ export function SignupForm() {
   };
 
   return (
-    <div className="w-[360px] mx-auto mt-12 space-y-6">
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-xl font-semibold">Create your account</h1>
@@ -100,66 +100,58 @@ export function SignupForm() {
       </div>
 
       {/* Form */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="John Doe" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <form onSubmit={handleSignup}>
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Kane Vidzro"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <Label htmlFor="password">Password</Label>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+            </div>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
-
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -174,8 +166,8 @@ export function SignupForm() {
               "Sign Up"
             )}
           </Button>
-        </form>
-      </Form>
+        </div>
+      </form>
 
       {/* Social Login Buttons */}
 

@@ -2,79 +2,73 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
-
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import { startOAuth } from "@/lib/oauthClient";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters" }),
-  rememberMe: z.boolean().optional(),
 });
 
-export function SigninForm() {
+export function SigninForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      rememberMe: false,
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleSignin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
+    const formData = formSchema.safeParse({ email, password });
+
+    if (!formData.success) {
+      const message = Object.values(
+        formData.error.flatten().fieldErrors,
+      ).flat()[0];
+      setError(message);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/signin", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData.data),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
       }
 
-      // Redirect to account page on success
-      router.push("/account");
+      router.push("/account"); // Redirect to account page on success
     } catch (err) {
-      // Handle different error types
-      const errorMessage = err instanceof Error ? err.message : "Login failed";
-      setError(errorMessage);
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div className="w-[360px] mx-auto mt-12 space-y-6">
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-xl font-semibold">Sign in to your account</h1>
@@ -89,62 +83,40 @@ export function SigninForm() {
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
-                  <a
-                    href="/auth/forgot-password"
-                    className="text-sm text-blue-600 underline-offset-2 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="rememberMe"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="!mt-0">Remember me</FormLabel>
-              </FormItem>
-            )}
-          />
+      <form onSubmit={handleSignin}>
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/auth/forgot-password"
+                className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
-
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -159,8 +131,8 @@ export function SigninForm() {
               "Sign In"
             )}
           </Button>
-        </form>
-      </Form>
+        </div>
+      </form>
 
       {/* Social Login Buttons */}
 

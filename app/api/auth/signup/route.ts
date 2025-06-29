@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { sendMail } from "@/lib/mailer";
 import { VerificationEmail } from "@/components/email/VerificationEmail";
 
@@ -9,42 +10,42 @@ export async function POST(req: NextRequest) {
   if (!name || !email || !password) {
     return NextResponse.json({ message: "Missing fields" }, { status: 400 });
   }
-  const normalizedEmail = email.trim().toLowerCase();
-  // Check if user exists
-  const existing = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  });
-  if (existing) {
-    return NextResponse.json(
-      { message: "Email already in use" },
-      { status: 400 },
-    );
-  }
-  // Hash password
-  const hashed = await bcrypt.hash(password, 10);
 
-  // Generate verification token
-  const token = Math.random().toString(36).substring(2) + Date.now();
-  // Create user (unverified)
-  await prisma.$transaction([
-    prisma.user.create({
+  const normalizedEmail = email.trim().toLowerCase();
+  const token = crypto.randomBytes(32).toString("hex");
+
+  await prisma.$transaction(async (tx) => {
+    // Check if user exists within the transaction
+    const existing = await tx.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (existing) {
+      throw new Error("Email already in use");
+    }
+
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // Create user and token in same transaction
+    await tx.user.create({
       data: {
         name,
         email: normalizedEmail,
         password: hashed,
         emailVerified: null,
       },
-    }),
-    prisma.verificationToken.create({
+    });
+
+    await tx.verificationToken.create({
       data: {
         identifier: normalizedEmail,
         token,
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h expiry
       },
-    }),
-  ]);
+    });
+  });
 
-  // TODO: Send verification email with token (implement email sending logic)
+  // Send verification email (outside transaction)
   const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email?token=${token}`;
   await sendMail({
     to: normalizedEmail,

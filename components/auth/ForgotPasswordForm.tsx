@@ -1,159 +1,121 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
-const forgotPasswordSchema = z.object({
+// Validation schema
+const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
 });
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [canResend, setCanResend] = useState(true);
-  const [resendTimer, setResendTimer] = useState(0);
 
-  const form = useForm<z.infer<typeof forgotPasswordSchema>>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  // Handle resend timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    } else if (resendTimer === 0 && !canResend) {
-      setCanResend(true);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer, canResend]);
-
-  const handleSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
 
+    const formData = formSchema.safeParse({ email });
+
+    if (!formData.success) {
+      const message = Object.values(
+        formData.error.flatten().fieldErrors,
+      ).flat()[0];
+      setError(message);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formData.data),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Password reset request failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
       }
 
       setSuccess(true);
-      setCanResend(false);
-      setResendTimer(59); // 1 minute cooldown
-      toast.success(`Reset link sent to ${values.email}`, {
-        description: "Check your inbox and spam folder",
-      });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
+        err instanceof Error ? err.message : "An unexpected error occurred",
       );
-      toast.error("Failed to send reset link");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-[360px] mx-auto mt-12 space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h1 className="text-xl font-semibold">Forgot your password?</h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your email to receive a reset link
-        </p>
-      </div>
-
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <div className="text-center space-y-4">
-          <p className="text-green-600">
-            Password reset link sent to your email!
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-semibold">Check your email</h1>
+          <p className="text-sm text-muted-foreground">
+            If this email is registered, a password reset link has been sent.
           </p>
-
-          <Button
-            variant="default"
-            onClick={() => handleSubmit(form.getValues())}
-            disabled={!canResend || isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : canResend ? (
-              "Resend"
-            ) : (
-              `Resend in ${resendTimer}s`
-            )}
-          </Button>
         </div>
       ) : (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <>
+          <div className="text-center space-y-1">
+            <h1 className="text-xl font-semibold">Forgot your password?</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email and we&apos;ll send you a link to reset it.
+            </p>
+          </div>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          <form onSubmit={handleForgotPassword}>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </span>
-              ) : (
-                "Send Reset Link"
-              )}
-            </Button>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </span>
+                ) : (
+                  "Send reset email"
+                )}
+              </Button>
+            </div>
           </form>
-        </Form>
+        </>
       )}
 
       <div className="text-center text-sm">
@@ -161,7 +123,7 @@ export function ForgotPasswordForm() {
           href="/auth/signin"
           className="text-blue-600 hover:underline font-medium"
         >
-          Back to Signin
+          Back to Sign in
         </Link>
       </div>
     </div>

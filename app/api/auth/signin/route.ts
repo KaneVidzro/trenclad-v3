@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { createSession } from "@/lib/session";
 import { sendMail } from "@/lib/mailer";
 import { VerificationEmail } from "@/components/email/VerificationEmail";
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!user.emailVerified) {
-    const token = Math.random().toString(36).substring(2) + Date.now();
+    const token = crypto.randomBytes(32).toString("hex");
     await prisma.verificationToken.upsert({
       where: { identifier_token: { identifier: normalizedEmail, token } },
       update: { expires: new Date(Date.now() + 1000 * 60 * 60) }, // 1h expiry

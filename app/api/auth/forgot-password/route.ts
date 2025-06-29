@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 import { sendMail } from "@/lib/mailer";
 import { PasswordResetEmail } from "@/components/email/PasswordResetEmail";
 
@@ -18,7 +19,11 @@ export async function POST(req: NextRequest) {
       message: "If that email exists, a reset link has been sent.",
     });
   }
-  const token = Math.random().toString(36).substring(2) + Date.now();
+
+  // Generate a secure token
+  // Use crypto.randomBytes for better security
+
+  const token = crypto.randomBytes(32).toString("hex");
   await prisma.passwordResetToken.upsert({
     where: { identifier_token: { identifier: normalizedEmail, token } },
     update: { expires: new Date(Date.now() + 1000 * 60 * 60) }, // 1 hour expiry
