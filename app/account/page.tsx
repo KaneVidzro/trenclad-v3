@@ -12,7 +12,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded space-y-8">
+    <div className="max-w-md mx-auto mt-12 p-6 space-y-8">
       <h1 className="text-2xl font-bold mb-4">Account</h1>
       <div className="flex items-center space-x-4 mb-6">
         <Avatar>
@@ -43,7 +43,7 @@ export default async function AccountPage() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Save Changes
           </Button>
@@ -72,7 +72,7 @@ export default async function AccountPage() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Change Password
           </Button>

@@ -48,7 +48,7 @@ export async function destroySession() {
   );
   session.destroy();
   revalidatePath("/");
-  redirect("/login");
+  redirect("/auth/signin");
 }
 
 // 4. Create or update user in the database
