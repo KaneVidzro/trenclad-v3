@@ -80,7 +80,7 @@ export default async function AccountPage() {
       </section>
 
       {/* Sign Out */}
-      <form action="/api/auth/logout" method="POST">
+      <form action="/api/auth/signout" method="POST">
         <Button variant="destructive" type="submit" className="w-full">
           Sign Out
         </Button>

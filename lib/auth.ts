@@ -6,7 +6,7 @@ import { getSession, createSession } from "@/lib/session";
 export interface User {
   id: string;
   email: string;
-  name?: string;
+  name: string;
   image?: string;
   emailVerified?: Date | null;
 }
@@ -33,7 +33,7 @@ export async function getUser(): Promise<User | null> {
     ? {
         id: user.id,
         email: user.email,
-        name: user.name ?? undefined,
+        name: user.name,
         image: user.image ?? undefined,
         emailVerified: user.emailVerified ?? null,
       }

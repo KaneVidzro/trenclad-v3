@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
@@ -32,6 +33,7 @@ export default function RootLayout({
             {children}
           </main>
           <Toaster />
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
