@@ -7,7 +7,6 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  image?: string;
   emailVerified?: Date | null;
 }
 
@@ -24,7 +23,6 @@ export async function getUser(): Promise<User | null> {
       id: true,
       email: true,
       name: true,
-      image: true,
       emailVerified: true,
     },
   });
@@ -34,7 +32,6 @@ export async function getUser(): Promise<User | null> {
         id: user.id,
         email: user.email,
         name: user.name,
-        image: user.image ?? undefined,
         emailVerified: user.emailVerified ?? null,
       }
     : null;

@@ -13,13 +13,39 @@ model User {
   email         String    @unique
   password      String?
   name          String
-  image         String?
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   // Relations
   accounts Account[]
+  Ad       Ad[]
+  Profile  Profile?
+  SavedAd  SavedAd[]
+}
+
+// User Profile Model
+model Profile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  bio         String?
+  image       String?
+  website     String?
+  phoneNumber String
+
+  region     String
+  address    String
+  city       String
+  gpsAddress String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Ad   Ad[]
+
+  @@index([userId])
+  @@map("profiles")
 }
 
 // Account Model (OAuth)
@@ -53,4 +79,49 @@ model PasswordResetToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// Ads Model
+model Ad {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  price       Float
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  Profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId    String
+  promotion    String? // featured, premium, standard
+  condition    String // new, used, refurbished
+  category     String
+  subcategory  String?
+  location     String? // Ghanaian location
+  images       String[]
+  status       String   @default("active") // active, sold, expired, pending
+  views        Int      @default(0)
+  isNegotiable Boolean  @default(false)
+
+  // Relations
+  SavedAd SavedAd[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Saved Ad Model
+model SavedAd {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  ad        Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  adId      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, adId])
 }

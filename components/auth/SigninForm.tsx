@@ -57,7 +57,7 @@ export function SigninForm({
         throw new Error(data.message || "Something went wrong");
       }
 
-      router.push("/account"); // Redirect to account page on success
+      router.push("/dashboard"); // Redirect to account page on success
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred",

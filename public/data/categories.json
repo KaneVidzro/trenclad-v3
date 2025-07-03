@@ -1,0 +1,109 @@
+[
+  {
+    "id": "vehicles",
+    "name": "Vehicles",
+    "subcategories": [
+      { "id": "cars", "name": "Cars" },
+      { "id": "motorcycles", "name": "Motorcycles" },
+      { "id": "trucks", "name": "Trucks & Vans" },
+      { "id": "auto-parts", "name": "Auto Parts" },
+      { "id": "commercial-vehicles", "name": "Commercial Vehicles" }
+    ]
+  },
+  {
+    "id": "property",
+    "name": "Property",
+    "subcategories": [
+      { "id": "apartments", "name": "Apartments" },
+      { "id": "houses", "name": "Houses" },
+      { "id": "land", "name": "Land" },
+      { "id": "commercial", "name": "Commercial Property" },
+      { "id": "rentals", "name": "Rentals" }
+    ]
+  },
+  {
+    "id": "electronics",
+    "name": "Electronics",
+    "subcategories": [
+      { "id": "phones", "name": "Phones & Tablets" },
+      { "id": "computers", "name": "Computers & Laptops" },
+      { "id": "tv-audio", "name": "TV & Audio" },
+      { "id": "cameras", "name": "Cameras" },
+      { "id": "gaming", "name": "Gaming" }
+    ]
+  },
+  {
+    "id": "fashion",
+    "name": "Fashion",
+    "subcategories": [
+      { "id": "clothing", "name": "Clothing" },
+      { "id": "shoes", "name": "Shoes" },
+      { "id": "accessories", "name": "Accessories" },
+      { "id": "jewelry", "name": "Jewelry & Watches" },
+      { "id": "bags", "name": "Bags & Wallets" }
+    ]
+  },
+  {
+    "id": "home-garden",
+    "name": "Home & Garden",
+    "subcategories": [
+      { "id": "furniture", "name": "Furniture" },
+      { "id": "appliances", "name": "Appliances" },
+      { "id": "decor", "name": "Home Decor" },
+      { "id": "garden", "name": "Garden & Outdoor" },
+      { "id": "tools", "name": "Tools & DIY" }
+    ]
+  },
+  {
+    "id": "jobs",
+    "name": "Jobs",
+    "subcategories": [
+      { "id": "full-time", "name": "Full Time" },
+      { "id": "part-time", "name": "Part Time" },
+      { "id": "contract", "name": "Contract" },
+      { "id": "internship", "name": "Internship" },
+      { "id": "remote", "name": "Remote" }
+    ]
+  },
+  {
+    "id": "services",
+    "name": "Services",
+    "subcategories": [
+      { "id": "repair", "name": "Repair & Maintenance" },
+      { "id": "cleaning", "name": "Cleaning" },
+      { "id": "transport", "name": "Transport" },
+      { "id": "education", "name": "Education & Training" },
+      { "id": "health", "name": "Health & Beauty" }
+    ]
+  },
+  {
+    "id": "business",
+    "name": "Business",
+    "subcategories": [
+      { "id": "equipment", "name": "Business Equipment" },
+      { "id": "franchise", "name": "Franchise" },
+      { "id": "investment", "name": "Investment" },
+      { "id": "partnership", "name": "Partnership" }
+    ]
+  },
+  {
+    "id": "agriculture",
+    "name": "Agriculture",
+    "subcategories": [
+      { "id": "livestock", "name": "Livestock" },
+      { "id": "crops", "name": "Crops" },
+      { "id": "equipment", "name": "Farm Equipment" },
+      { "id": "land", "name": "Farm Land" }
+    ]
+  },
+  {
+    "id": "education",
+    "name": "Education",
+    "subcategories": [
+      { "id": "books", "name": "Books" },
+      { "id": "courses", "name": "Courses" },
+      { "id": "tutoring", "name": "Tutoring" },
+      { "id": "equipment", "name": "Educational Equipment" }
+    ]
+  }
+]
